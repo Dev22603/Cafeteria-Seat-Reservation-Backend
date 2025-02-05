@@ -1,6 +1,11 @@
 import express from "express";
-import { createBooking, checkAvailability } from "../controllers/booking.controller.mjs";
-import { authenticate} from "../middlewares/auth.mjs";
+import {
+	createBooking,
+	checkSeatAvailability,
+	deleteBooking,
+	getAvailableSeatsByTime,
+} from "../controllers/booking.controller.mjs";
+import { authenticate } from "../middlewares/auth.mjs";
 
 const router = express.Router();
 
@@ -8,9 +13,10 @@ const router = express.Router();
 router.post("/bookings", authenticate, createBooking);
 
 // DELETE /bookings/:id - Delete a booking by its ID
-// router.delete("/bookings/:id", authenticate, deleteBooking);
+router.delete("/bookings/:booking_id", authenticate, deleteBooking);
 
 // GET /bookings/availability - Check if a seat is available
-router.get("/bookings/availability", checkAvailability);
+router.get("/bookings/check-seat-availability", checkSeatAvailability);
+router.get("/bookings/get-available-seats-by-time", getAvailableSeatsByTime);
 
 export default router;

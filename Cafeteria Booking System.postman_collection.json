@@ -1,0 +1,411 @@
+{
+	"info": {
+		"_postman_id": "dd8c5218-e0fa-4538-88e4-a23c90b3c672",
+		"name": "Cafeteria Booking System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34310047"
+	},
+	"item": [
+		{
+			"name": "Seats",
+			"item": [
+				{
+					"name": "Create Seat",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// if (!pm.globals.has(\"seatNumber\")) {\r",
+									"//     pm.globals.set(\"seatNumber\", \"1\");  // Start from \"1\" as a string\r",
+									"// }\r",
+									"\r",
+									"// let seatNumber = parseInt(pm.globals.get(\"seatNumber\"));\r",
+									"// pm.globals.set(\"seat_code\", seatNumber.toString()); // Convert to string\r",
+									"// pm.globals.set(\"seatNumber\", (seatNumber + 1).toString()); // Increment and keep as string\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "// {\r\n//     \"seat_code\":\"{{seat_code}}\"\r\n// } //this is for automating the creation of seats\r\n\r\n{\r\n    \"seat_code\":\"10\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/seats",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"seats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Seat",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/seats/code/:code",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"seats",
+								"code",
+								":code"
+							],
+							"variable": [
+								{
+									"key": "code",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Booking",
+			"item": [
+				{
+					"name": "Check seat availability",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/bookings/check-seat-availability?seat_code=1&start_time=2025-02-06T10:00:00Z&end_time=2025-02-06T11:00:00Z",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"check-seat-availability"
+							],
+							"query": [
+								{
+									"key": "seat_code",
+									"value": "1"
+								},
+								{
+									"key": "start_time",
+									"value": "2025-02-06T10:00:00Z"
+								},
+								{
+									"key": "end_time",
+									"value": "2025-02-06T11:00:00Z"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Available Seats by time",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/bookings/get-available-seats-by-time?start_time=2025-02-06T10:00:00Z&end_time=2025-02-06T11:00:00Z",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"get-available-seats-by-time"
+							],
+							"query": [
+								{
+									"key": "start_time",
+									"value": "2025-02-06T10:00:00Z"
+								},
+								{
+									"key": "end_time",
+									"value": "2025-02-06T11:00:00Z"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Booking",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"seat_code\": \"1\",\r\n    \"start_time\": \"2025-02-06T10:00:00Z\",\r\n    \"end_time\": \"2025-02-06T11:00:00Z\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/bookings",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"bookings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Booking",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/bookings/:booking_id",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"bookings",
+								":booking_id"
+							],
+							"variable": [
+								{
+									"key": "booking_id",
+									"value": "67a3a3032d49eecf4a369904"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "signup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"Dev Bachani\",\r\n    \"email\":\"21bce049@gmail.com\",\r\n    \"phone_number\":\"7184807601\",\r\n    \"password\":\"Abc@1234\",\r\n    \"role\":\"admin\"\r\n}\r\n// {\r\n//     \"name\":\"Vatsal Shah\",\r\n//     \"email\":\"vatsal.shah2304@gmail.com\",\r\n//     \"phone_number\":\"1184807601\",\r\n//     \"password\":\"Abc@1234\",\r\n//     \"role\":\"customer\"\r\n// }\r\n// {\r\n//     \"name\":\"Aditya Shah\",\r\n//     \"email\":\"21bce008@gmail.com\",\r\n//     \"phone_number\":\"7184857601\",\r\n//     \"password\":\"Abc@1234\",\r\n//     \"role\":\"customer\"\r\n// }\r\n// {\r\n//     \"name\":\"Shukan Panchal\",\r\n//     \"email\":\"21bce175@gmail.com\",\r\n//     \"phone_number\":\"1184857001\",\r\n//     \"password\":\"Abc@1234\",\r\n//     \"role\":\"customer\"\r\n// }\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/auth/signup",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let responseJson = pm.response.json();\r",
+									"\r",
+									"// Check if the token exists and save it to the 'ecommerce' environment variable\r",
+									"if (responseJson.token) {\r",
+									"    pm.environment.set(\"AuthToken\", responseJson.token);\r",
+									"    console.log(\"Token saved to ecommerce environment variable: AuthToken\");\r",
+									"} else {\r",
+									"    console.log(\"Token not found in the response.\");\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"21bce049@gmail.com\",\r\n    \"password\":\"Abc@1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/auth/login",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/users/:id",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67a37de9814b860379f97d82"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BaseUrl}}/users/:userId",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"users",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "67a37de9814b860379f97d82"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"name\": \"Dev Bachani\",\r\n        \"role\": \"hod\",\r\n        \"email\": \"21bce049@gmail.com\",\r\n        \"phone_number\": \"7184807600\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BaseUrl}}/users/:id",
+							"host": [
+								"{{BaseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "67a0f99618d46dcb8142c563"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

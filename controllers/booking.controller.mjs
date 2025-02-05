@@ -1,7 +1,12 @@
 import Booking from "../models/booking.model.mjs";
 import Seat from "../models/seat.model.mjs";
 
-const isSeatAvailable = async (seat_code, start_time, end_time) => {
+const isSeatAvailable = async (
+	seat_code,
+	new_booking_start_time,
+	new_booking_end_time
+) => {
+	console.log("------", new_booking_start_time);
 	// Lookup the seat by its seat_code to retrieve its _id
 	const seat = await Seat.findOne({ seat_code });
 	if (!seat) {
@@ -12,14 +17,79 @@ const isSeatAvailable = async (seat_code, start_time, end_time) => {
 	// Find any booking for the same seat where the times overlap
 	const conflict = await Booking.findOne({
 		seat_id,
-		start_time: { $lt: end_time },
-		end_time: { $gt: start_time },
+		start_time: { $lt: new_booking_end_time },
+		end_time: { $gt: new_booking_start_time },
 	});
 
 	return !conflict; // returns true if there's no conflict
 };
 
-const checkAvailability = async (req, res) => {
+// Function to check if the time range is valid
+const validateTimeRange = (start_time, end_time) => {
+	if (!start_time || !end_time) {
+		throw new Error("start_time and end_time are required.");
+	}
+
+	const startDate = new Date(start_time);
+	const endDate = new Date(end_time);
+
+	if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+		throw new Error("Invalid date format.");
+	}
+
+	if (endDate <= startDate) {
+		throw new Error("end_time must be after start_time.");
+	}
+
+	return { startDate, endDate };
+};
+
+// Function to get the booked seats for the given time range
+const getBookedSeats = async (startDate, endDate) => {
+	// Find all booked seats that overlap with the given time range
+	const bookedSeats = await Booking.find({
+		start_time: { $lt: endDate },
+		end_time: { $gt: startDate },
+	}).distinct("seat_id"); // Get only seat IDs
+
+	return bookedSeats;
+};
+
+// Function to get the available seats by excluding booked ones
+const getAvailableSeats = async (bookedSeats) => {
+	// Find all seats that are NOT in the booked list
+	const availableSeats = await Seat.find({
+		_id: { $nin: bookedSeats }, // Exclude booked seats
+	}).select("seat_code");
+
+	return availableSeats;
+};
+
+// Main function to check availability
+const getAvailableSeatsByTime = async (req, res) => {
+	try {
+		// Extract start_time and end_time from query params
+		const { start_time, end_time } = req.query;
+
+		// Validate the time range
+		const { startDate, endDate } = validateTimeRange(start_time, end_time);
+
+		// Get the booked seats
+		const bookedSeats = await getBookedSeats(startDate, endDate);
+
+		// Get available seats
+		const availableSeats = await getAvailableSeats(bookedSeats);
+
+		// Respond with the list of available seats
+		res.status(200).json({
+			available_seats: availableSeats.map((seat) => seat.seat_code),
+		});
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
+
+const checkSeatAvailability = async (req, res) => {
 	try {
 		const { seat_code, start_time, end_time } = req.query;
 
@@ -44,6 +114,8 @@ const checkAvailability = async (req, res) => {
 		}
 
 		// Check seat availability
+		console.log(startDate);
+
 		const available = await isSeatAvailable(seat_code, startDate, endDate);
 
 		res.status(200).json({ seat_code, available });
@@ -54,8 +126,12 @@ const checkAvailability = async (req, res) => {
 
 const createBooking = async (req, res) => {
 	try {
-		// Extract seat_code along with the other fields from the request body
-		const { seat_code, start_time, end_time, created_by } = req.body;
+		// Extract seat_code, start_time, end_time from request body
+		const { seat_code, start_time, end_time } = req.body;
+
+		// Get user ID from the token
+		const created_by = req.user.id; // Extracted from token
+		console.log(req.user);
 
 		// Parse and validate date inputs
 		const startDate = new Date(start_time);
@@ -67,7 +143,7 @@ const createBooking = async (req, res) => {
 				.json({ error: "Invalid date format provided." });
 		}
 
-		// Check if end_date is after start_date
+		// Ensure end_time is after start_time
 		if (endDate <= startDate) {
 			return res
 				.status(400)
@@ -82,15 +158,15 @@ const createBooking = async (req, res) => {
 			});
 		}
 
-		// Retrieve the seat's _id for booking creation
+		// Retrieve the seat's _id from seat_code
 		const seat = await Seat.findOne({ seat_code });
 		if (!seat) {
-			return res.status(404).json({
-				error: "Seat not found with the provided seat_code.",
-			});
+			return res
+				.status(404)
+				.json({ error: "Seat not found with the provided seat_code." });
 		}
 
-		// Create the booking using the seat's _id and the date objects
+		// Create the booking using the seat's _id and user ID from token
 		const booking = await Booking.create({
 			seat_id: seat._id,
 			created_by,
@@ -104,66 +180,40 @@ const createBooking = async (req, res) => {
 	}
 };
 
-export { isSeatAvailable, checkAvailability, createBooking };
+// ✅ Delete a booking
+const deleteBooking = async (req, res) => {
+	try {
+		const { booking_id } = req.params;
+		console.log(booking_id);
 
-// import Booking from "../models/booking.model.mjs";
-// import Seat from "../models/seat.model.mjs";
+		// Find the booking by ID
+		const booking = await Booking.findById(booking_id);
+		if (!booking) {
+			return res.status(404).json({ error: "Booking not found." });
+		}
 
-// const isSeatAvailable = async (seat_code, start_time, end_time) => {
-//   // Lookup the seat by its seat_code to retrieve its _id
-//   const seat = await Seat.findOne({ seat_code });
-//   if (!seat) {
-//     throw new Error(`Seat not found with seat_code: ${seat_code}`);
-//   }
-//   const seat_id = seat._id;
+		// Only the booking owner or an admin can delete the booking
+		if (
+			req.user.id !== booking.created_by.toString() &&
+			req.user.role !== "admin"
+		) {
+			return res
+				.status(403)
+				.json({ error: "Unauthorized to delete this booking." });
+		}
 
-//   // Find any booking for the same seat where the times overlap
-//   const conflict = await Booking.findOne({
-//     seat_id,
-//     start_time: { $lt: end_time },
-//     end_time: { $gt: start_time },
-//   });
+		// Delete the booking
+		await Booking.findByIdAndDelete(booking_id);
 
-//   return !conflict; // returns true if there's no conflict
-// };
+		res.status(200).json({ message: "Booking deleted successfully." });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+};
 
-// const createBooking = async (req, res) => {
-//   try {
-//     // Extract seat_code along with the other fields from the request body
-//     const { seat_code, start_time, end_time, created_by } = req.body;
-
-//     // Check for booking conflicts using the seat_code
-//     const available = await isSeatAvailable(
-//       seat_code,
-//       new Date(start_time),
-//       new Date(end_time)
-//     );
-//     if (!available) {
-//       return res.status(400).json({
-//         error: "This seat is already booked for the selected time range.",
-//       });
-//     }
-
-//     // Retrieve the seat's _id for booking creation
-//     const seat = await Seat.findOne({ seat_code });
-//     if (!seat) {
-//       return res.status(404).json({
-//         error: "Seat not found with the provided seat_code.",
-//       });
-//     }
-
-//     // Create the booking using the seat's _id
-//     const booking = await Booking.create({
-//       seat_id: seat._id,
-//       created_by,
-//       start_time,
-//       end_time,
-//     });
-
-//     res.status(201).json(booking);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-
-// export { isSeatAvailable, createBooking };
+export {
+	checkSeatAvailability,
+	createBooking,
+	deleteBooking,
+	getAvailableSeatsByTime,
+};
